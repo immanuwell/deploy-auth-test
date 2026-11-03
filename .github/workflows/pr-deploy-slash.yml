@@ -1,0 +1,52 @@
+name: PR Slash-Command Deploy
+
+# -----------------------------------------------------------------------
+# REPRODUCTION TEST for WorldHealthOrganization/smart-base
+# Source:  https://github.com/WorldHealthOrganization/smart-base/blob/main/.github/workflows/pr-deploy-slash.yml
+# Purpose: Verify whether GitHub's platform applies `action_required`
+#          to issue_comment-triggered workflows when the `if:` condition
+#          has no author_association check.
+#
+# This file reproduces the exact `on:`, `if:`, and `permissions:` blocks
+# from WHO's workflow verbatim.  The job steps are replaced with
+# diagnostic logging only — no deploy, no dispatch, no external calls.
+# -----------------------------------------------------------------------
+
+# ---- VERBATIM from WHO smart-base pr-deploy-slash.yml ----
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  dispatch:
+    # ---- VERBATIM if: block ----
+    if: >
+      github.event.issue.pull_request != null &&
+      (startsWith(github.event.comment.body, '/deploy') ||
+       contains(github.event.comment.body, '\n/deploy'))
+
+    runs-on: ubuntu-latest
+
+    # ---- VERBATIM permissions block ----
+    permissions:
+      issues: write          # to post reactions and reply comments on the PR
+      actions: write         # to trigger a workflow run
+      pull-requests: read    # to look up the PR branch name
+
+    # ---- REPLACED steps: diagnostic only, no deploy ----
+    steps:
+      - name: Log triggering actor and association
+        env:
+          ACTOR:       ${{ github.actor }}
+          ASSOCIATION: ${{ github.event.comment.author_association }}
+          COMMENT:     ${{ github.event.comment.body }}
+          PR_NUMBER:   ${{ github.event.issue.number }}
+          REPO:        ${{ github.repository }}
+        run: |
+          echo "=== REPRODUCTION TEST FIRED ==="
+          echo "repo:        $REPO"
+          echo "pr:          $PR_NUMBER"
+          echo "actor:       $ACTOR"
+          echo "association: $ASSOCIATION"
+          echo "comment:     $COMMENT"
+          echo "=== IF THIS STEP RUNS, GITHUB DID NOT GATE THE WORKFLOW ==="
